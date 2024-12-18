@@ -1,0 +1,87 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.lang3.SerializationUtils;
+
+public class PredictiveMaintenance {
+    private static Object rfc;
+
+    public static void main(String[] args) {
+        try {
+            FileInputStream fileInputStream = new FileInputStream("model.joblib");
+            rfc = SerializationUtils.deserialize(fileInputStream.readAllBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        JFrame frame = new JFrame("Machine Predictive Maintenance Classification");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+        frame.setLayout(new GridLayout(0, 2));
+
+        // Type selection
+        String[] types = {"Low", "Medium", "High"};
+        JComboBox<String> typeComboBox = new JComboBox<>(types);
+        frame.add(new JLabel("Select a Type:"));
+        frame.add(typeComboBox);
+
+        // Input fields
+        JTextField airTemperatureField = new JTextField();
+        JTextField processTemperatureField = new JTextField();
+        JTextField rotationalSpeedField = new JTextField();
+        JTextField torqueField = new JTextField();
+        JTextField toolWearField = new JTextField();
+
+        frame.add(new JLabel("Air temperature [K]:"));
+        frame.add(airTemperatureField);
+        frame.add(new JLabel("Process temperature [K]:"));
+        frame.add(processTemperatureField);
+        frame.add(new JLabel("Rotational speed [rpm]:"));
+        frame.add(rotationalSpeedField);
+        frame.add(new JLabel("Torque [Nm]:"));
+        frame.add(torqueField);
+        frame.add(new JLabel("Tool wear [min]:"));
+        frame.add(toolWearField);
+
+        JButton predictButton = new JButton("Predict Failure");
+        frame.add(predictButton);
+        JLabel resultLabel = new JLabel("");
+        frame.add(resultLabel);
+
+        predictButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Map<String, Integer> typeMapping = new HashMap<>();
+                typeMapping.put("Low", 0);
+                typeMapping.put("Medium", 1);
+                typeMapping.put("High", 2);
+                int selectedType = typeMapping.get(typeComboBox.getSelectedItem().toString());
+
+                // Get input values
+                double airTemperature = Double.parseDouble(airTemperatureField.getText());
+                double processTemperature = Double.parseDouble(processTemperatureField.getText());
+                double rotationalSpeed = Double.parseDouble(rotationalSpeedField.getText());
+                double torque = Double.parseDouble(torqueField.getText());
+                double toolWear = Double.parseDouble(toolWearField.getText());
+
+                // Code for Prediction
+                int[] failurePred = (int[]) rfc.predict(new double[][]{{selectedType, airTemperature, 
+                        processTemperature, rotationalSpeed, torque, toolWear}});
+
+                if (failurePred[0] == 1) {
+                    resultLabel.setText("Failure");
+                } else {
+                    resultLabel.setText("No Failure");
+                }
+            }
+        });
+
+        frame.setVisible(true);
+    }
+}
+
